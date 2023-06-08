@@ -1,0 +1,10 @@
+{
+  "packagePublisher": "Visual Droids",
+  "packageName": "VisualDroidsEZBackdrop",
+  "packageShortName": "EZ Backdrop",
+  "packageFullName": "Visual Droids EZ Backdrop",
+  "packageID": "com.visualdroids.ezbackdrop",
+  "packageVersion": "23.6.8",
+  "packageRepository": "VisualDroids/EZ-Backdrop-for-Toonboom-Harmony",
+  "packageApiURL": "https://api.github.com/repos/VisualDroids/EZ-Backdrop-for-Toonboom-Harmony/releases/latest"
+}

@@ -1,0 +1,16 @@
+[submodule "code/lib/OpenHarmony"]
+	path = code/lib/OpenHarmony
+	url = https://github.com/VisualDroids/OpenHarmony/
+	branch = ezbackdrop
+[submodule "code/lib/FileArchiver"]
+	path = code/lib/FileArchiver
+	url = https://github.com/mihgehl/File-Archiver-for-Toonboom-Harmony-Scripts
+	branch = main
+[submodule "code/lib/Updater"]
+	path = code/lib/Updater
+	url = https://github.com/mihgehl/Updater-for-Toonboom-Harmony-Scripts
+	branch = main
+[submodule "code/lib/Network"]
+	path = code/lib/Network
+	url = https://github.com/mihgehl/Network-Module-for-Toonboom-Harmony-Scripts
+	branch = main
