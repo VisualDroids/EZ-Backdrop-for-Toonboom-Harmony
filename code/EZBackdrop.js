@@ -21,11 +21,17 @@ if (typeof this.__proto__.visualDroids === "undefined") {
       };
       if (this._nodeViewNumber === "") {
         this._nodeViewNumber = findNodeView();
+        if (this._nodeViewNumber === "") {
+          throw new Error("Could not find Node View.");
+        }
         return view.group(this._nodeViewNumber);
       } else {
         var currentGroup = view.group(visualDroids._nodeViewNumber);
         if (currentGroup === "") {
           this._nodeViewNumber = findNodeView();
+          if (this._nodeViewNumber === "") {
+            throw new Error("Could not find Node View.");
+          }
           var currentGroup = view.group(this._nodeViewNumber);
         }
         return currentGroup;
@@ -47,6 +53,7 @@ Object.defineProperty(Ezbackdrop.prototype, "backdropName", {
     preferences.setString("VISUALDROIDS_EZBACKDROP_NAME", backdropName);
   },
 });
+
 Object.defineProperty(Ezbackdrop.prototype, "backdropText", {
   get: function () {
     return preferences.getString("VISUALDROIDS_EZBACKDROP_TEXT", "");
@@ -55,6 +62,7 @@ Object.defineProperty(Ezbackdrop.prototype, "backdropText", {
     preferences.setString("VISUALDROIDS_EZBACKDROP_TEXT", backdropText);
   },
 });
+
 Object.defineProperty(Ezbackdrop.prototype, "backdropColor", {
   get: function () {
     return preferences.getString(
@@ -212,15 +220,28 @@ Ezbackdrop.prototype.createBackdrop = function (
   color
 ) {
   try {
-    // Begin Undo
-    $.beginUndo("Visual Droids EZ Backdrop");
-
     // // MACOS - Find Current Group Path in Node View
     // $.app.mainWindow.setFocus();
     // $.app.getWidgetByName("Node View").setFocus();
     // var nodeViewCurrentGroup = view.group(view.currentView());
+    // MessageLog.trace(view.group(view.currentView()));
 
-    var nodeViewCurrentGroup = visualDroids.nodeViewGroup;
+    // MessageLog.trace(
+    //   ">>" +
+    //     JSON.stringify(
+    //       Action.validate(
+    //         "onActionNewViewChecked(QString)",
+    //         "sceneUI",
+    //         "Node View"
+    //       )
+    //     )
+    // );
+
+    // Action.perform("onActionFocusOnSelectionNV()", "Node View");
+    // Action.perform("onActionResetView()", "Node View");
+    // Action.perform("onActionZoomIn()", "Node View");
+    // Action.perform("onActionZoomIn()", "Node View");
+    // Action.perform("onActionFocusOnSelectionNV()", "Node View");
 
     // var nodeViewCurrentGroup = (function () {
     //   var findNodeView = function () {
@@ -232,13 +253,80 @@ Ezbackdrop.prototype.createBackdrop = function (
     //   return view.group(findNodeView());
     // })();
 
+    // New Method
+
+    var widgets = QApplication.allWidgets();
+    var nodeViews = [];
+    for (var i in widgets) {
+      var widget = widgets[i];
+      if (widget.objectName == "Node View") {
+        nodeViews.push(widget);
+      }
+    }
+
+    if (nodeViews.length === 0) {
+      MessageBox.warning(
+        "No Node View found. Please open a Node View.",
+        1,
+        0,
+        0,
+        "EZ Backdrop"
+      );
+      return;
+    } else if (nodeViews.length > 1) {
+      MessageBox.warning(
+        "More than one Node View found. Please close all Node Views except the one you want to use.",
+        1,
+        0,
+        0,
+        "EZ Backdrop"
+      );
+      return;
+    }
+
+    // MessageLog.trace("Antes > " + view.currentView());
+    nodeViews[0].setFocus();
+    // MessageLog.trace("Despues > " + view.currentView());
+    var nodeViewCurrentGroup = view.group(view.currentView());
+
     // Create new Backdrop
+    scene.beginUndoRedoAccum("Visual Droids EZ Backdrop");
     Action.perform("onActionCreateBackdrop()", "Node View");
     var allBackdrops = Backdrop.backdrops(nodeViewCurrentGroup);
     allBackdrops[0].title.text = backdropName;
     allBackdrops[0].description.text = backdropText;
     allBackdrops[0].color = new $.oColorValue(color).toInt();
     Backdrop.setBackdrops(nodeViewCurrentGroup, allBackdrops);
+    scene.endUndoRedoAccum();
+
+    // New Method
+    // // Action.perform("onActionNewViewChecked(QString)", "sceneUI", "Node View"); // Node View
+    // // Action.perform("onActionNewViewChecked(QString)", "sceneUI", "Node View"); // Node View
+    // // MACOS - Find Current Group Path in Node View
+    // $.app.mainWindow.setFocus();
+    // $.app.getWidgetByName("Node View").setFocus();
+    // MessageLog.trace("Despues > " + view.currentView());
+    // var nodeViewCurrentGroup = view.group(view.currentView());
+    // // var nodeViewCurrentGroup = visualDroids.nodeViewGroup; // Old method
+    // MessageLog.trace(nodeViewCurrentGroup);
+
+    // // Create new Backdrop
+    // // Action.perform("onActionFocusOnSelectionNV()", "Node View");
+    // selection.clearSelection();
+    // selection.addNodeToSelection(nodeViewCurrentGroup);
+    // Action.perform("onActionEnterGroup()", "Node View");
+    // // Action.performForEach("onActionCreateBackdrop()", "Node View");
+    // Action.perform("onActionCreateBackdrop()", "Node View");
+    // var allBackdrops = Backdrop.backdrops(nodeViewCurrentGroup);
+    // // MessageLog.trace(JSON.stringify(allBackdrops));
+    // // if (allBackdrops.length === 0) {
+    // //   MessageLog.trace("No Backdrops found");
+    // //   allBackdrops = { 0: { title: { text: "" }, description: { text: "" } } };
+    // // }
+    // allBackdrops[0].title.text = backdropName;
+    // allBackdrops[0].description.text = backdropText;
+    // allBackdrops[0].color = new $.oColorValue(color).toInt();
+    // Backdrop.setBackdrops(nodeViewCurrentGroup, allBackdrops);
 
     // End Undo
     $.endUndo();
@@ -413,6 +501,7 @@ function ezbackdrop() {
     MessageLog.trace(error);
   }
 }
+
 function ezbackdroppiemenu() {
   MessageLog.clearLog();
   try {
@@ -423,9 +512,9 @@ function ezbackdroppiemenu() {
   }
 }
 function ezbackdropfastbackdropkey() {
-  MessageLog.clearLog();
   try {
     this.ezb = new Ezbackdrop(packageInfo, true);
+    // MessageLog.trace(this.__proto__.visualDroids.nodeViewGroup);
     this.ezb.createBackdrop(
       this.ezb.backdropName,
       this.ezb.backdropText,
