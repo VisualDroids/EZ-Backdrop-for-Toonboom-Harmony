@@ -6,33 +6,39 @@
 var packageInfo = require("./configure.js").packageInfo;
 include(packageInfo.packageFolder + "/lib/OpenHarmony/openHarmony.js");
 
-if (typeof this.__proto__.visualDroids === "undefined") {
-  // Mount object to persitent vars
-  visualDroids = { _nodeViewNumber: "" };
-  this.__proto__.visualDroids = visualDroids;
+// if (typeof this.__proto__.visualDroids === "undefined") {
+//   // Mount object to persitent vars
+//   visualDroids = { _nodeViewNumber: "" };
+//   this.__proto__.visualDroids = visualDroids;
 
-  Object.defineProperty(visualDroids, "nodeViewGroup", {
-    get: function () {
-      var findNodeView = function () {
-        for (var i = 0; i < 100000; i++) {
-          if (view.type("View" + i) === "Node View") break;
-        }
-        return "View" + i;
-      };
-      if (this._nodeViewNumber === "") {
-        this._nodeViewNumber = findNodeView();
-        return view.group(this._nodeViewNumber);
-      } else {
-        var currentGroup = view.group(visualDroids._nodeViewNumber);
-        if (currentGroup === "") {
-          this._nodeViewNumber = findNodeView();
-          var currentGroup = view.group(this._nodeViewNumber);
-        }
-        return currentGroup;
-      }
-    },
-  });
-}
+//   Object.defineProperty(visualDroids, "nodeViewGroup", {
+//     get: function () {
+//       var findNodeView = function () {
+//         for (var i = 0; i < 100000; i++) {
+//           if (view.type("View" + i) === "Node View") break;
+//         }
+//         return "View" + i;
+//       };
+//       if (this._nodeViewNumber === "") {
+//         this._nodeViewNumber = findNodeView();
+//         if (this._nodeViewNumber === "") {
+//           throw new Error("Could not find Node View.");
+//         }
+//         return view.group(this._nodeViewNumber);
+//       } else {
+//         var currentGroup = view.group(visualDroids._nodeViewNumber);
+//         if (currentGroup === "") {
+//           this._nodeViewNumber = findNodeView();
+//           if (this._nodeViewNumber === "") {
+//             throw new Error("Could not find Node View.");
+//           }
+//           var currentGroup = view.group(this._nodeViewNumber);
+//         }
+//         return currentGroup;
+//       }
+//     },
+//   });
+// }
 
 function Ezbackdrop(packageInfo, debug) {
   this.packageInfo = packageInfo;
@@ -47,6 +53,7 @@ Object.defineProperty(Ezbackdrop.prototype, "backdropName", {
     preferences.setString("VISUALDROIDS_EZBACKDROP_NAME", backdropName);
   },
 });
+
 Object.defineProperty(Ezbackdrop.prototype, "backdropText", {
   get: function () {
     return preferences.getString("VISUALDROIDS_EZBACKDROP_TEXT", "");
@@ -55,6 +62,7 @@ Object.defineProperty(Ezbackdrop.prototype, "backdropText", {
     preferences.setString("VISUALDROIDS_EZBACKDROP_TEXT", backdropText);
   },
 });
+
 Object.defineProperty(Ezbackdrop.prototype, "backdropColor", {
   get: function () {
     return preferences.getString(
@@ -212,36 +220,57 @@ Ezbackdrop.prototype.createBackdrop = function (
   color
 ) {
   try {
-    // Begin Undo
-    $.beginUndo("Visual Droids EZ Backdrop");
+    // A new way to access the node view, using the objectName of the Node View that is not reliable on startup:
+    function findNodeViews() {
+      var widgets = QApplication.allWidgets();
+      var nodeViews = [];
 
-    // // MACOS - Find Current Group Path in Node View
-    // $.app.mainWindow.setFocus();
-    // $.app.getWidgetByName("Node View").setFocus();
-    // var nodeViewCurrentGroup = view.group(view.currentView());
+      for (var i in widgets) {
+        var widget = widgets[i];
+        if (widget.objectName === "NodeQuickSearch") {
+          nodeViews.push(widget.parentWidget());
+        }
+      }
 
-    var nodeViewCurrentGroup = visualDroids.nodeViewGroup;
+      return nodeViews;
+    }
 
-    // var nodeViewCurrentGroup = (function () {
-    //   var findNodeView = function () {
-    //     for (var i = 0; i < 100000; i++) {
-    //       if (view.type("View" + i) === "Node View") break;
-    //     }
-    //     return "View" + i;
-    //   };
-    //   return view.group(findNodeView());
-    // })();
+    var maxAttempts = 5;
+    var attempts = 0;
+    var nodeViews = findNodeViews();
 
-    // Create new Backdrop
-    Action.perform("onActionCreateBackdrop()", "Node View");
-    var allBackdrops = Backdrop.backdrops(nodeViewCurrentGroup);
-    allBackdrops[0].title.text = backdropName;
-    allBackdrops[0].description.text = backdropText;
-    allBackdrops[0].color = new $.oColorValue(color).toInt();
-    Backdrop.setBackdrops(nodeViewCurrentGroup, allBackdrops);
+    while (attempts < maxAttempts) {
+      // MessageLog.trace("Attempt " + attempts + " of " + maxAttempts + ".");
+      // MessageLog.trace("Node Views found: " + nodeViews.length);
 
-    // End Undo
-    $.endUndo();
+      // Create new Backdrop
+      if (nodeViews.length === 1) {
+        nodeViews[0].setFocus();
+        var nodeViewCurrentGroup = view.group(view.currentView());
+        scene.beginUndoRedoAccum("Visual Droids EZ Backdrop");
+        Action.perform("onActionCreateBackdrop()", "Node View");
+        var allBackdrops = Backdrop.backdrops(nodeViewCurrentGroup);
+        allBackdrops[0].title.text = backdropName;
+        allBackdrops[0].description.text = backdropText;
+        allBackdrops[0].color = new $.oColorValue(color).toInt();
+        Backdrop.setBackdrops(nodeViewCurrentGroup, allBackdrops);
+        scene.endUndoRedoAccum();
+        break;
+      }
+      if (nodeViews.length > 2) {
+        MessageBox.warning(
+          "Many Node Views found. Please close all Node Views except the one you want to use.",
+          1,
+          0,
+          0,
+          "EZ Backdrop"
+        );
+        break;
+      }
+      Action.perform("onActionNewViewChecked(QString)", "sceneUI", "Node View");
+      nodeViews = findNodeViews();
+      attempts++;
+    }
   } catch (error) {
     MessageLog.trace(error);
   }
@@ -413,6 +442,7 @@ function ezbackdrop() {
     MessageLog.trace(error);
   }
 }
+
 function ezbackdroppiemenu() {
   MessageLog.clearLog();
   try {
@@ -423,9 +453,9 @@ function ezbackdroppiemenu() {
   }
 }
 function ezbackdropfastbackdropkey() {
-  MessageLog.clearLog();
   try {
     this.ezb = new Ezbackdrop(packageInfo, true);
+    // MessageLog.trace(this.__proto__.visualDroids.nodeViewGroup);
     this.ezb.createBackdrop(
       this.ezb.backdropName,
       this.ezb.backdropText,
