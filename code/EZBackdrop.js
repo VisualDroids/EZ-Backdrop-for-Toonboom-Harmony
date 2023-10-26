@@ -350,17 +350,61 @@ Ezbackdrop.prototype.piemenu = function () {
     },
   };
 
+  var localCreateBackdrop = this.createBackdrop;
+  var localBackdropName = this.backdropName;
+
+  // for (var i = 0; i < 11; i++) {
+  for (var i in backdropPresets) {
+    (function (index) {
+      pieMenuButtons[index] = new $.oPieButton(
+        (iconFile = ""),
+        (text = "")
+        // (text = backdropPresets[String(index)].name)
+      );
+
+      var itemColor = new $.oColorValue(backdropPresets[index].color);
+      var styleSheet =
+        "QPushButton{ color: transparent;" +
+        "background-color: transparent;" +
+        "font-size: 16px;" +
+        "font-weight: bold;" +
+        // "color: white;" +
+        // "border: 2px solid white;" +
+        // "border-radius: 10px;" +
+        "};" +
+        "QPushButton:hover {" +
+        "background-color: transparent;" +
+        "color: transparent;" +
+        "};";
+      // "QPushButton:hover{ background-color: rgba(0, 200, 255, 80%); }"+
+      // "QToolTip{ background-color: rgba(0, 255, 255, 100%); }";
+      pieMenuButtons[index].setStyleSheet(styleSheet);
+
+      pieMenuButtons[index].backgroundColor = backdropPresets[index].color;
+      pieMenuButtons[index].activate = function () {
+        try {
+          pieInputText.removeEventFilter(focusEventFilter);
+          localCreateBackdrop(
+            (backdropName = localBackdropName),
+            (backdropText = ""),
+            (pickedColor = backdropPresets[index].color)
+          );
+          pieMenuButtons[index].closeMenu();
+        } catch (error) {
+          MessageLog.trace(error);
+        }
+      };
+    })(i);
+  }
   var menu = new $.oPieMenu(
     (name = "EZ Backdrop"),
     (widgets = pieMenuButtons),
     (show = true),
     (minAngle = -0.5),
     (maxAngle = 1.5),
-    (radius = 200)
+    (radius = 100)
   );
 
-  var localCreateBackdrop = this.createBackdrop;
-  var localBackdropName = this.backdropName;
   var pieInputText = new QLineEdit(this.backdropName, menu);
 
   var focusEventFilter = new QObject();
@@ -377,51 +421,17 @@ Ezbackdrop.prototype.piemenu = function () {
 
   pieInputText.alignment = Qt.AlignCenter;
   pieInputText.setStyleSheet(
-    "QLineEdit {width: 200; height: 100; text-align: center;}"
+    "QLineEdit {width: 130; height:70; text-align: center;}"
   );
   pieInputText.installEventFilter(focusEventFilter);
 
-  // pieInputText.focusPolicy = Qt.StrongFocus;
+  pieInputText.focusPolicy = Qt.StrongFocus;
   // pieInputText.selectAll();
 
   pieInputText.editingFinished.connect(this, function () {
     localBackdropName = pieInputText.text;
     this.backdropName = localBackdropName;
   });
-
-  // for (var i = 0; i < 11; i++) {
-  for (var i in backdropPresets) {
-    (function (index) {
-      pieMenuButtons[index] = new $.oPieButton(
-        (iconFile = ""),
-        (text = backdropPresets[String(index)].name)
-      );
-
-      var itemColor = new $.oColorValue(backdropPresets[index].color);
-      var styleSheet =
-        "QPushButton{ background-color: rgba(" +
-        itemColor.r +
-        ", " +
-        itemColor.g +
-        ", " +
-        itemColor.b +
-        ", 100%); border-radius: 6px;}" +
-        // "QPushButton:hover{ background-color: rgba(0, 200, 255, 80%); }"+
-        "QToolTip{ background-color: rgba(0, 255, 255, 100%); }";
-      pieMenuButtons[index].setStyleSheet(styleSheet);
-
-      pieMenuButtons[index].backgroundColor = backdropPresets[index].color;
-      pieMenuButtons[index].activate = function () {
-        pieInputText.removeEventFilter(focusEventFilter);
-        localCreateBackdrop(
-          (backdropName = localBackdropName),
-          (backdropText = ""),
-          (pickedColor = backdropPresets[index].color)
-        );
-        pieMenuButtons[index].closeMenu();
-      };
-    })(i);
-  }
 
   menu.button = pieInputText;
   menu.show();
