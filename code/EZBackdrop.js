@@ -402,7 +402,7 @@ Ezbackdrop.prototype.piemenu = function () {
     (show = true),
     (minAngle = -0.5),
     (maxAngle = 1.5),
-    (radius = 100)
+    (radius = 120)
   );
 
   var pieInputText = new QLineEdit(this.backdropName, menu);
@@ -420,8 +420,9 @@ Ezbackdrop.prototype.piemenu = function () {
   };
 
   pieInputText.alignment = Qt.AlignCenter;
+  // Set the stylesheet of pieInputText
   pieInputText.setStyleSheet(
-    "QLineEdit {width: 130; height:70; text-align: center;}"
+    "QLineEdit {font: 16pt; font-weight: bold; width: 130; height:70; text-align: center;}"
   );
   pieInputText.installEventFilter(focusEventFilter);
 
